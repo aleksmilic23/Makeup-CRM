@@ -5,6 +5,8 @@ import { Users, CalendarDays, TrendingUp, Receipt, AlertTriangle } from "lucide-
 import { format, addDays, parseISO } from "date-fns";
 import type { AppointmentWithRelations } from "@/lib/database.types";
 
+export const dynamic = "force-dynamic";
+
 interface DueSoonInvoice {
   id: string;
   invoiceNumber: string;

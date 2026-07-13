@@ -5,6 +5,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Scissors, Clock, DollarSign } from "lucide-react";
 import type { Service } from "@/lib/database.types";
 
+export const dynamic = "force-dynamic";
+
 async function getServices(): Promise<Service[]> {
   const { data } = await supabase.from("services").select("*").order("name");
   return data ?? [];

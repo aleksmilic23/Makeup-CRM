@@ -6,6 +6,8 @@ import { Plus, CalendarDays } from "lucide-react";
 import { format } from "date-fns";
 import type { AppointmentWithRelations } from "@/lib/database.types";
 
+export const dynamic = "force-dynamic";
+
 const statusColors: Record<string, string> = {
   scheduled: "bg-blue-100 text-blue-700",
   completed: "bg-green-100 text-green-700",

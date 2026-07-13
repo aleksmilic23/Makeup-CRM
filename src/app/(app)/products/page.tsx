@@ -5,6 +5,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Package, AlertTriangle } from "lucide-react";
 import type { Product } from "@/lib/database.types";
 
+export const dynamic = "force-dynamic";
+
 async function getProducts(): Promise<Product[]> {
   const { data } = await supabase.from("products").select("*").order("name");
   return data ?? [];

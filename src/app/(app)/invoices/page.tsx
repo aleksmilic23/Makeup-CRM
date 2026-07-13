@@ -6,6 +6,8 @@ import { Plus, Receipt } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import type { InvoiceWithRelations } from "@/lib/database.types";
 
+export const dynamic = "force-dynamic";
+
 const statusColors: Record<string, string> = {
   draft: "bg-gray-100 text-gray-600",
   sent: "bg-blue-100 text-blue-700",

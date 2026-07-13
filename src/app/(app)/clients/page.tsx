@@ -5,6 +5,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Phone, Mail, User } from "lucide-react";
 import type { Client } from "@/lib/database.types";
 
+export const dynamic = "force-dynamic";
+
 async function getClients(): Promise<Client[]> {
   const { data } = await supabase
     .from("clients")
