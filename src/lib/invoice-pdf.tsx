@@ -30,6 +30,24 @@ const styles = StyleSheet.create({
   totalRow: { flexDirection: "row", width: 200, justifyContent: "space-between", paddingVertical: 2 },
   grandTotal: { fontSize: 13, fontWeight: 700 },
   notes: { marginTop: 24, color: "#6b7280" },
+  depositBox: {
+    marginTop: 20,
+    padding: 14,
+    backgroundColor: "#fdf2f8",
+    borderLeft: "4 solid #ec4899",
+  },
+  depositLabel: { fontSize: 9, fontWeight: 700, color: "#9d174d", letterSpacing: 0.5 },
+  depositRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginTop: 4 },
+  depositAmount: { fontSize: 20, fontWeight: 700, color: "#1f2937" },
+  depositMeta: { fontSize: 9, color: "#6b7280", marginTop: 2 },
+  depositPaidBadge: { fontSize: 9, fontWeight: 700, color: "#15803d" },
+  balanceRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 10,
+    paddingTop: 10,
+    borderTop: "1 solid #fbcfe8",
+  },
 });
 
 function InvoiceDocument({ invoice }: { invoice: InvoiceWithRelations }) {
@@ -111,17 +129,30 @@ function InvoiceDocument({ invoice }: { invoice: InvoiceWithRelations }) {
         </View>
 
         {invoice.deposit_amount != null ? (
-          <View style={styles.notes}>
-            <Text style={styles.label}>PAYMENT SCHEDULE</Text>
-            <Text>
-              Deposit ({Number(invoice.deposit_percentage)}%): ${Number(invoice.deposit_amount).toFixed(2)}
-              {invoice.due_date ? ` due ${invoice.due_date}` : ""}
-              {invoice.deposit_paid_at ? " — Paid" : ""}
+          <View style={styles.depositBox}>
+            <Text style={styles.depositLabel}>
+              {invoice.deposit_paid_at ? "DEPOSIT" : "DEPOSIT DUE TO RESERVE YOUR DATE"}
             </Text>
-            <Text>
-              Balance: ${(Number(invoice.total) - Number(invoice.deposit_amount)).toFixed(2)}
-              {invoice.event_date ? ` due by ${invoice.event_date}` : ""}
-            </Text>
+            <View style={styles.depositRow}>
+              <Text style={styles.depositAmount}>
+                ${Number(invoice.deposit_amount).toFixed(2)}
+                <Text style={{ fontSize: 11, fontWeight: 400, color: "#6b7280" }}>
+                  {" "}({Number(invoice.deposit_percentage)}% of total)
+                </Text>
+              </Text>
+              {invoice.deposit_paid_at ? (
+                <Text style={styles.depositPaidBadge}>PAID {invoice.deposit_paid_at.slice(0, 10)}</Text>
+              ) : invoice.due_date ? (
+                <Text style={styles.depositMeta}>Due {invoice.due_date}</Text>
+              ) : null}
+            </View>
+            <View style={styles.balanceRow}>
+              <Text style={styles.depositMeta}>Remaining balance</Text>
+              <Text style={styles.depositMeta}>
+                ${(Number(invoice.total) - Number(invoice.deposit_amount)).toFixed(2)}
+                {invoice.event_date ? ` due by ${invoice.event_date}` : ""}
+              </Text>
+            </View>
           </View>
         ) : null}
 

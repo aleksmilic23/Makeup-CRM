@@ -101,30 +101,35 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
       </Card>
 
       {typedInvoice.deposit_amount != null && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">Payment Schedule</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-1 text-sm">
-            <p>
-              Deposit ({Number(typedInvoice.deposit_percentage)}%):{" "}
-              <span className="font-medium">${Number(typedInvoice.deposit_amount).toFixed(2)}</span>
-              {typedInvoice.due_date ? ` due ${format(parseISO(typedInvoice.due_date), "MMM d, yyyy")}` : ""}
-              {typedInvoice.deposit_paid_at ? (
-                <span className="text-green-600"> · Paid {format(new Date(typedInvoice.deposit_paid_at), "MMM d, yyyy")}</span>
-              ) : (
-                <span className="text-amber-600"> · Not yet paid</span>
-              )}
-            </p>
-            <p>
-              Balance:{" "}
-              <span className="font-medium">
-                ${(Number(typedInvoice.total) - Number(typedInvoice.deposit_amount)).toFixed(2)}
+        <div className="rounded-lg border border-pink-200 bg-pink-50 p-4">
+          <p className="text-xs font-semibold tracking-wide text-pink-800">
+            {typedInvoice.deposit_paid_at ? "DEPOSIT" : "DEPOSIT DUE TO RESERVE YOUR DATE"}
+          </p>
+          <div className="mt-1 flex items-end justify-between">
+            <p className="text-2xl font-bold">
+              ${Number(typedInvoice.deposit_amount).toFixed(2)}{" "}
+              <span className="text-sm font-normal text-muted-foreground">
+                ({Number(typedInvoice.deposit_percentage)}% of total)
               </span>
-              {typedInvoice.event_date ? ` due by ${format(parseISO(typedInvoice.event_date), "MMM d, yyyy")}` : ""}
             </p>
-          </CardContent>
-        </Card>
+            {typedInvoice.deposit_paid_at ? (
+              <span className="text-sm font-semibold text-green-700">
+                Paid {format(new Date(typedInvoice.deposit_paid_at), "MMM d, yyyy")}
+              </span>
+            ) : typedInvoice.due_date ? (
+              <span className="text-sm text-muted-foreground">
+                Due {format(parseISO(typedInvoice.due_date), "MMM d, yyyy")}
+              </span>
+            ) : null}
+          </div>
+          <div className="mt-3 flex items-center justify-between border-t border-pink-200 pt-3 text-sm text-muted-foreground">
+            <span>Remaining balance</span>
+            <span>
+              ${(Number(typedInvoice.total) - Number(typedInvoice.deposit_amount)).toFixed(2)}
+              {typedInvoice.event_date ? ` due by ${format(parseISO(typedInvoice.event_date), "MMM d, yyyy")}` : ""}
+            </span>
+          </div>
+        </div>
       )}
 
       {hasPaymentInfo() && (
