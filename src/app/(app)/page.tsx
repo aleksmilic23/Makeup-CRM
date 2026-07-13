@@ -1,7 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Users, CalendarDays, DollarSign, TrendingUp } from "lucide-react";
+import { Users, CalendarDays, TrendingUp, Receipt, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import type { AppointmentWithRelations } from "@/lib/database.types";
 
@@ -10,12 +9,15 @@ async function getDashboardData() {
   const startOfDay = new Date(today.setHours(0, 0, 0, 0)).toISOString();
   const endOfDay = new Date(today.setHours(23, 59, 59, 999)).toISOString();
   const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString();
+  const todayDate = format(new Date(), "yyyy-MM-dd");
 
   const [
     { count: totalClients },
     { count: todayAppointments },
     { data: monthAppointments },
     { data: upcomingAppointments },
+    { data: outstandingInvoices },
+    { count: overdueInvoices },
   ] = await Promise.all([
     supabase.from("clients").select("*", { count: "exact", head: true }),
     supabase
@@ -35,15 +37,24 @@ async function getDashboardData() {
       .gte("scheduled_at", new Date().toISOString())
       .order("scheduled_at", { ascending: true })
       .limit(5),
+    supabase.from("invoices").select("total").eq("status", "sent"),
+    supabase
+      .from("invoices")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "sent")
+      .lt("due_date", todayDate),
   ]);
 
   const monthRevenue = monthAppointments?.reduce((sum, a) => sum + Number(a.price), 0) ?? 0;
+  const outstandingBalance = outstandingInvoices?.reduce((sum, i) => sum + Number(i.total), 0) ?? 0;
 
   return {
     totalClients: totalClients ?? 0,
     todayAppointments: todayAppointments ?? 0,
     monthRevenue,
     upcomingAppointments: (upcomingAppointments ?? []) as AppointmentWithRelations[],
+    outstandingBalance,
+    overdueInvoices: overdueInvoices ?? 0,
   };
 }
 
@@ -55,8 +66,14 @@ const statusColors: Record<string, string> = {
 };
 
 export default async function DashboardPage() {
-  const { totalClients, todayAppointments, monthRevenue, upcomingAppointments } =
-    await getDashboardData();
+  const {
+    totalClients,
+    todayAppointments,
+    monthRevenue,
+    upcomingAppointments,
+    outstandingBalance,
+    overdueInvoices,
+  } = await getDashboardData();
 
   return (
     <div className="space-y-6">
@@ -93,6 +110,30 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold">${monthRevenue.toFixed(0)}</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Outstanding Balance</CardTitle>
+            <Receipt className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold">${outstandingBalance.toFixed(0)}</p>
+            <p className="text-xs text-muted-foreground mt-1">Sent, unpaid invoices</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Overdue Invoices</CardTitle>
+            <AlertTriangle className={`h-4 w-4 ${overdueInvoices > 0 ? "text-amber-500" : "text-muted-foreground"}`} />
+          </CardHeader>
+          <CardContent>
+            <p className={`text-3xl font-bold ${overdueInvoices > 0 ? "text-amber-600" : ""}`}>{overdueInvoices}</p>
+            <p className="text-xs text-muted-foreground mt-1">Past due date</p>
           </CardContent>
         </Card>
       </div>
