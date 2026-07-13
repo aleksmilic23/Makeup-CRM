@@ -169,6 +169,9 @@ export type Database = {
           tax_rate: number
           tax_amount: number
           total: number
+          deposit_percentage: number | null
+          deposit_amount: number | null
+          deposit_paid_at: string | null
           sent_at: string | null
           paid_at: string | null
         }
@@ -187,6 +190,9 @@ export type Database = {
           tax_rate?: number
           tax_amount?: number
           total?: number
+          deposit_percentage?: number | null
+          deposit_amount?: number | null
+          deposit_paid_at?: string | null
           sent_at?: string | null
           paid_at?: string | null
         }
@@ -205,6 +211,9 @@ export type Database = {
           tax_rate?: number
           tax_amount?: number
           total?: number
+          deposit_percentage?: number | null
+          deposit_amount?: number | null
+          deposit_paid_at?: string | null
           sent_at?: string | null
           paid_at?: string | null
         }

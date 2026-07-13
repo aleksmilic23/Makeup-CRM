@@ -76,6 +76,9 @@ create table if not exists public.invoices (
   tax_rate numeric(5,2) not null default 0,
   tax_amount numeric(10,2) not null default 0,
   total numeric(10,2) not null default 0,
+  deposit_percentage numeric(5,2),
+  deposit_amount numeric(10,2),
+  deposit_paid_at timestamptz,
   sent_at timestamptz,
   paid_at timestamptz
 );

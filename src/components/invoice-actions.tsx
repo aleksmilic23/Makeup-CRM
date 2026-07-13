@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Send, Download, CheckCircle, Ban } from "lucide-react";
+import { Send, Download, CheckCircle, Ban, Wallet } from "lucide-react";
 import type { Invoice, Database } from "@/lib/database.types";
 
 type InvoiceUpdate = Database["public"]["Tables"]["invoices"]["Update"];
@@ -47,6 +47,21 @@ export function InvoiceActions({ invoice, clientEmail }: Props) {
     setUpdating(false);
   }
 
+  async function markDepositPaid() {
+    setUpdating(true);
+    const { error } = await supabase
+      .from("invoices")
+      .update({ deposit_paid_at: new Date().toISOString() })
+      .eq("id", invoice.id);
+    if (error) {
+      toast.error("Failed to update invoice");
+    } else {
+      toast.success("Deposit marked as paid");
+      router.refresh();
+    }
+    setUpdating(false);
+  }
+
   return (
     <div className="flex items-center gap-2 flex-wrap">
       <Button
@@ -66,6 +81,12 @@ export function InvoiceActions({ invoice, clientEmail }: Props) {
           Download PDF
         </Button>
       </a>
+      {invoice.deposit_amount != null && !invoice.deposit_paid_at && invoice.status !== "paid" && (
+        <Button size="sm" variant="outline" type="button" onClick={markDepositPaid} disabled={updating}>
+          <Wallet className="h-3.5 w-3.5 mr-1.5" />
+          Mark Deposit Paid
+        </Button>
+      )}
       {invoice.status !== "paid" && (
         <Button size="sm" variant="outline" type="button" onClick={() => updateStatus("paid")} disabled={updating}>
           <CheckCircle className="h-3.5 w-3.5 mr-1.5" />

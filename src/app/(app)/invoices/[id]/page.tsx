@@ -100,6 +100,33 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
         </CardContent>
       </Card>
 
+      {typedInvoice.deposit_amount != null && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-muted-foreground">Payment Schedule</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-1 text-sm">
+            <p>
+              Deposit ({Number(typedInvoice.deposit_percentage)}%):{" "}
+              <span className="font-medium">${Number(typedInvoice.deposit_amount).toFixed(2)}</span>
+              {typedInvoice.due_date ? ` due ${format(parseISO(typedInvoice.due_date), "MMM d, yyyy")}` : ""}
+              {typedInvoice.deposit_paid_at ? (
+                <span className="text-green-600"> · Paid {format(new Date(typedInvoice.deposit_paid_at), "MMM d, yyyy")}</span>
+              ) : (
+                <span className="text-amber-600"> · Not yet paid</span>
+              )}
+            </p>
+            <p>
+              Balance:{" "}
+              <span className="font-medium">
+                ${(Number(typedInvoice.total) - Number(typedInvoice.deposit_amount)).toFixed(2)}
+              </span>
+              {typedInvoice.event_date ? ` due by ${format(parseISO(typedInvoice.event_date), "MMM d, yyyy")}` : ""}
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       {hasPaymentInfo() && (
         <Card>
           <CardHeader className="pb-2">

@@ -110,6 +110,21 @@ function InvoiceDocument({ invoice }: { invoice: InvoiceWithRelations }) {
           </View>
         </View>
 
+        {invoice.deposit_amount != null ? (
+          <View style={styles.notes}>
+            <Text style={styles.label}>PAYMENT SCHEDULE</Text>
+            <Text>
+              Deposit ({Number(invoice.deposit_percentage)}%): ${Number(invoice.deposit_amount).toFixed(2)}
+              {invoice.due_date ? ` due ${invoice.due_date}` : ""}
+              {invoice.deposit_paid_at ? " — Paid" : ""}
+            </Text>
+            <Text>
+              Balance: ${(Number(invoice.total) - Number(invoice.deposit_amount)).toFixed(2)}
+              {invoice.event_date ? ` due by ${invoice.event_date}` : ""}
+            </Text>
+          </View>
+        ) : null}
+
         {hasPaymentInfo() ? (
           <View style={styles.notes}>
             <Text style={styles.label}>PAYMENT DETAILS</Text>

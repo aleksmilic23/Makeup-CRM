@@ -37,6 +37,20 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
 
   const fromAddress = process.env.RESEND_FROM_EMAIL ?? "onboarding@resend.dev";
 
+  const scheduleHtml =
+    typedInvoice.deposit_amount != null
+      ? `
+      <p style="margin-top: 16px;"><strong>Payment Schedule</strong><br />
+      Deposit (${Number(typedInvoice.deposit_percentage)}%): $${Number(typedInvoice.deposit_amount).toFixed(2)}${
+        typedInvoice.due_date ? ` due ${typedInvoice.due_date}` : ""
+      } to confirm booking<br />
+      Balance: $${(Number(typedInvoice.total) - Number(typedInvoice.deposit_amount)).toFixed(2)}${
+        typedInvoice.event_date ? ` due by ${typedInvoice.event_date}` : ""
+      }
+      </p>
+    `
+      : "";
+
   const paymentHtml = hasPaymentInfo()
     ? `
       <p style="margin-top: 16px;"><strong>Payment Details</strong><br />
@@ -60,7 +74,10 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
       <p>Please find attached invoice <strong>${typedInvoice.invoice_number}</strong> for
       <strong>$${Number(typedInvoice.total).toFixed(2)}</strong>${
         typedInvoice.event_date ? ` for your event on ${typedInvoice.event_date}` : ""
-      }${typedInvoice.due_date ? `, due ${typedInvoice.due_date}` : ""}.</p>
+      }${
+        typedInvoice.deposit_amount == null && typedInvoice.due_date ? `, due ${typedInvoice.due_date}` : ""
+      }.</p>
+      ${scheduleHtml}
       ${paymentHtml}
       <p>Thank you!<br />${business.name}</p>
     `,

@@ -49,6 +49,8 @@ export function InvoiceForm({
   const [dueDate, setDueDate] = useState(invoice?.due_date ?? "");
   const [eventDate, setEventDate] = useState(invoice?.event_date ?? "");
   const [taxRate, setTaxRate] = useState(invoice?.tax_rate ?? 0);
+  const [requireDeposit, setRequireDeposit] = useState(invoice?.deposit_amount != null);
+  const [depositPercentage, setDepositPercentage] = useState(invoice?.deposit_percentage ?? 50);
   const [notes, setNotes] = useState(invoice?.notes ?? "");
   const [items, setItems] = useState<LineItem[]>(
     invoice
@@ -66,6 +68,8 @@ export function InvoiceForm({
   const subtotal = items.reduce((sum, item) => sum + item.quantity * item.unit_price, 0);
   const taxAmount = subtotal * (taxRate / 100);
   const total = subtotal + taxAmount;
+  const depositAmount = requireDeposit ? total * (depositPercentage / 100) : 0;
+  const balanceAmount = total - depositAmount;
 
   function updateItem(key: string, patch: Partial<LineItem>) {
     setItems((prev) => prev.map((item) => (item.key === key ? { ...item, ...patch } : item)));
@@ -108,6 +112,9 @@ export function InvoiceForm({
       subtotal: Number(subtotal.toFixed(2)),
       tax_amount: Number(taxAmount.toFixed(2)),
       total: Number(total.toFixed(2)),
+      deposit_percentage: requireDeposit ? depositPercentage : null,
+      deposit_amount: requireDeposit ? Number(depositAmount.toFixed(2)) : null,
+      deposit_paid_at: requireDeposit ? invoice?.deposit_paid_at ?? null : null,
     };
 
     if (invoice) {
@@ -333,6 +340,45 @@ export function InvoiceForm({
               )}
               <p className="text-base font-semibold">Total: ${total.toFixed(2)}</p>
             </div>
+          </div>
+
+          <div className="space-y-2 rounded-lg border p-3">
+            <label className="flex items-center gap-2 text-sm font-medium">
+              <input
+                type="checkbox"
+                checked={requireDeposit}
+                onChange={(e) => setRequireDeposit(e.target.checked)}
+                className="h-4 w-4"
+              />
+              Require a deposit to book
+            </label>
+            {requireDeposit && (
+              <div className="flex items-center justify-between gap-4 pl-6">
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    step={1}
+                    value={depositPercentage}
+                    onChange={(e) => setDepositPercentage(Number(e.target.value))}
+                    className="w-20"
+                    aria-label="Deposit percentage"
+                  />
+                  <span className="text-sm text-muted-foreground">% deposit</span>
+                </div>
+                <div className="text-right text-sm">
+                  <p>
+                    Deposit: <span className="font-medium">${depositAmount.toFixed(2)}</span>
+                    {dueDate ? ` due ${dueDate}` : ""}
+                  </p>
+                  <p className="text-muted-foreground">
+                    Balance: ${balanceAmount.toFixed(2)}
+                    {eventDate ? ` due by ${eventDate}` : " due by event date (not set)"}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="space-y-1.5">
