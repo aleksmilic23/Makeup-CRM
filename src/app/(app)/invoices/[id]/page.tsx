@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InvoiceActions } from "@/components/invoice-actions";
 import { paymentInfo, hasPaymentInfo } from "@/lib/payment-info";
 import { Pencil } from "lucide-react";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import type { InvoiceWithRelations } from "@/lib/database.types";
 
 const statusColors: Record<string, string> = {
@@ -44,8 +44,9 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
             <Link href={`/clients/${typedInvoice.clients.id}`} className="hover:underline">
               {typedInvoice.clients.name}
             </Link>
-            {" · "}Issued {format(new Date(typedInvoice.issue_date), "MMM d, yyyy")}
-            {typedInvoice.due_date ? ` · Due ${format(new Date(typedInvoice.due_date), "MMM d, yyyy")}` : ""}
+            {typedInvoice.event_date ? ` · Event ${format(parseISO(typedInvoice.event_date), "MMM d, yyyy")}` : ""}
+            {" · "}Issued {format(parseISO(typedInvoice.issue_date), "MMM d, yyyy")}
+            {typedInvoice.due_date ? ` · Due ${format(parseISO(typedInvoice.due_date), "MMM d, yyyy")}` : ""}
           </p>
         </div>
         <Link href={`/invoices/${id}/edit`}>

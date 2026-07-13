@@ -59,8 +59,8 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
       <p>Hi ${typedInvoice.clients.name},</p>
       <p>Please find attached invoice <strong>${typedInvoice.invoice_number}</strong> for
       <strong>$${Number(typedInvoice.total).toFixed(2)}</strong>${
-        typedInvoice.due_date ? `, due ${typedInvoice.due_date}` : ""
-      }.</p>
+        typedInvoice.event_date ? ` for your event on ${typedInvoice.event_date}` : ""
+      }${typedInvoice.due_date ? `, due ${typedInvoice.due_date}` : ""}.</p>
       ${paymentHtml}
       <p>Thank you!<br />${business.name}</p>
     `,

@@ -70,6 +70,7 @@ create table if not exists public.invoices (
   status invoice_status not null default 'draft',
   issue_date date not null default current_date,
   due_date date,
+  event_date date,
   notes text,
   subtotal numeric(10,2) not null default 0,
   tax_rate numeric(5,2) not null default 0,

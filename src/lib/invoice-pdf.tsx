@@ -59,7 +59,13 @@ function InvoiceDocument({ invoice }: { invoice: InvoiceWithRelations }) {
             {invoice.clients.phone ? <Text style={styles.muted}>{invoice.clients.phone}</Text> : null}
           </View>
           <View style={styles.col}>
-            <Text style={styles.label}>ISSUE DATE</Text>
+            {invoice.event_date ? (
+              <>
+                <Text style={styles.label}>EVENT DATE</Text>
+                <Text>{invoice.event_date}</Text>
+              </>
+            ) : null}
+            <Text style={[styles.label, invoice.event_date ? { marginTop: 8 } : {}]}>ISSUE DATE</Text>
             <Text>{invoice.issue_date}</Text>
             {invoice.due_date ? (
               <>

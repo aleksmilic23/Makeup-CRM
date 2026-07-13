@@ -47,6 +47,7 @@ export function InvoiceForm({
   const [clientId, setClientId] = useState(invoice?.client_id ?? defaultClientId ?? "");
   const [issueDate, setIssueDate] = useState(invoice?.issue_date ?? format(new Date(), "yyyy-MM-dd"));
   const [dueDate, setDueDate] = useState(invoice?.due_date ?? "");
+  const [eventDate, setEventDate] = useState(invoice?.event_date ?? "");
   const [taxRate, setTaxRate] = useState(invoice?.tax_rate ?? 0);
   const [notes, setNotes] = useState(invoice?.notes ?? "");
   const [items, setItems] = useState<LineItem[]>(
@@ -101,6 +102,7 @@ export function InvoiceForm({
       appointment_id: invoice?.appointment_id ?? defaultAppointmentId ?? null,
       issue_date: issueDate,
       due_date: dueDate || null,
+      event_date: eventDate || null,
       notes: notes || null,
       tax_rate: taxRate,
       subtotal: Number(subtotal.toFixed(2)),
@@ -218,6 +220,15 @@ export function InvoiceForm({
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="event_date">Event Date</Label>
+              <Input
+                id="event_date"
+                type="date"
+                value={eventDate ?? ""}
+                onChange={(e) => setEventDate(e.target.value)}
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="issue_date">Issue Date</Label>

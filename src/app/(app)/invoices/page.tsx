@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Receipt } from "lucide-react";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import type { InvoiceWithRelations } from "@/lib/database.types";
 
 const statusColors: Record<string, string> = {
@@ -64,8 +64,9 @@ export default async function InvoicesPage() {
                       {invoice.invoice_number} · {invoice.clients?.name}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Issued {format(new Date(invoice.issue_date), "MMM d, yyyy")}
-                      {invoice.due_date ? ` · Due ${format(new Date(invoice.due_date), "MMM d, yyyy")}` : ""}
+                      {invoice.event_date ? `Event ${format(parseISO(invoice.event_date), "MMM d, yyyy")} · ` : ""}
+                      Issued {format(parseISO(invoice.issue_date), "MMM d, yyyy")}
+                      {invoice.due_date ? ` · Due ${format(parseISO(invoice.due_date), "MMM d, yyyy")}` : ""}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">

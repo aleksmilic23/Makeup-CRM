@@ -163,6 +163,7 @@ export type Database = {
           status: 'draft' | 'sent' | 'paid' | 'void'
           issue_date: string
           due_date: string | null
+          event_date: string | null
           notes: string | null
           subtotal: number
           tax_rate: number
@@ -180,6 +181,7 @@ export type Database = {
           status?: 'draft' | 'sent' | 'paid' | 'void'
           issue_date?: string
           due_date?: string | null
+          event_date?: string | null
           notes?: string | null
           subtotal?: number
           tax_rate?: number
@@ -197,6 +199,7 @@ export type Database = {
           status?: 'draft' | 'sent' | 'paid' | 'void'
           issue_date?: string
           due_date?: string | null
+          event_date?: string | null
           notes?: string | null
           subtotal?: number
           tax_rate?: number
