@@ -1,8 +1,42 @@
 import { supabase } from "@/lib/supabase";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, CalendarDays, TrendingUp, Receipt, AlertTriangle } from "lucide-react";
-import { format } from "date-fns";
+import { format, addDays, parseISO } from "date-fns";
 import type { AppointmentWithRelations } from "@/lib/database.types";
+
+interface DueSoonInvoice {
+  id: string;
+  invoiceNumber: string;
+  clientName: string;
+  label: "Deposit" | "Balance";
+  amount: number;
+  date: string;
+  overdue: boolean;
+}
+
+type SentInvoiceRow = {
+  id: string;
+  invoice_number: string;
+  total: number;
+  due_date: string | null;
+  event_date: string | null;
+  deposit_amount: number | null;
+  deposit_paid_at: string | null;
+  clients: { name: string } | null;
+};
+
+function getNextDue(inv: SentInvoiceRow): { label: "Deposit" | "Balance"; amount: number; date: string } | null {
+  if (inv.deposit_amount != null && !inv.deposit_paid_at) {
+    return inv.due_date ? { label: "Deposit", amount: Number(inv.deposit_amount), date: inv.due_date } : null;
+  }
+  if (inv.deposit_amount != null && inv.deposit_paid_at) {
+    return inv.event_date
+      ? { label: "Balance", amount: Number(inv.total) - Number(inv.deposit_amount), date: inv.event_date }
+      : null;
+  }
+  return inv.due_date ? { label: "Balance", amount: Number(inv.total), date: inv.due_date } : null;
+}
 
 async function getDashboardData() {
   const today = new Date();
@@ -16,8 +50,7 @@ async function getDashboardData() {
     { count: todayAppointments },
     { data: monthAppointments },
     { data: upcomingAppointments },
-    { data: outstandingInvoices },
-    { count: overdueInvoices },
+    { data: sentInvoices },
   ] = await Promise.all([
     supabase.from("clients").select("*", { count: "exact", head: true }),
     supabase
@@ -37,16 +70,47 @@ async function getDashboardData() {
       .gte("scheduled_at", new Date().toISOString())
       .order("scheduled_at", { ascending: true })
       .limit(5),
-    supabase.from("invoices").select("total").eq("status", "sent"),
     supabase
       .from("invoices")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "sent")
-      .lt("due_date", todayDate),
+      .select("id, invoice_number, total, due_date, event_date, deposit_amount, deposit_paid_at, clients(name)")
+      .eq("status", "sent"),
   ]);
 
   const monthRevenue = monthAppointments?.reduce((sum, a) => sum + Number(a.price), 0) ?? 0;
-  const outstandingBalance = outstandingInvoices?.reduce((sum, i) => sum + Number(i.total), 0) ?? 0;
+
+  const allSentInvoices = (sentInvoices ?? []) as unknown as SentInvoiceRow[];
+
+  const outstandingBalance = allSentInvoices.reduce((sum, inv) => {
+    const remaining =
+      inv.deposit_amount != null && inv.deposit_paid_at
+        ? Number(inv.total) - Number(inv.deposit_amount)
+        : Number(inv.total);
+    return sum + remaining;
+  }, 0);
+
+  const overdueInvoices = allSentInvoices.filter((inv) => {
+    const nextDue = getNextDue(inv);
+    return nextDue != null && nextDue.date < todayDate;
+  }).length;
+
+  const dueSoonCutoff = format(addDays(new Date(), 7), "yyyy-MM-dd");
+  const dueSoonInvoices: DueSoonInvoice[] = allSentInvoices
+    .map((inv) => {
+      const nextDue = getNextDue(inv);
+      if (!nextDue || nextDue.date > dueSoonCutoff) return null;
+      return {
+        id: inv.id,
+        invoiceNumber: inv.invoice_number,
+        clientName: inv.clients?.name ?? "",
+        label: nextDue.label,
+        amount: nextDue.amount,
+        date: nextDue.date,
+        overdue: nextDue.date < todayDate,
+      };
+    })
+    .filter((x): x is DueSoonInvoice => x !== null)
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(0, 8);
 
   return {
     totalClients: totalClients ?? 0,
@@ -55,6 +119,7 @@ async function getDashboardData() {
     upcomingAppointments: (upcomingAppointments ?? []) as AppointmentWithRelations[],
     outstandingBalance,
     overdueInvoices: overdueInvoices ?? 0,
+    dueSoonInvoices,
   };
 }
 
@@ -73,6 +138,7 @@ export default async function DashboardPage() {
     upcomingAppointments,
     outstandingBalance,
     overdueInvoices,
+    dueSoonInvoices,
   } = await getDashboardData();
 
   return (
@@ -137,6 +203,42 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Invoices Due Soon</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {dueSoonInvoices.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">Nothing due in the next 7 days.</p>
+          ) : (
+            <div className="space-y-1">
+              {dueSoonInvoices.map((item) => (
+                <Link
+                  key={item.id}
+                  href={`/invoices/${item.id}`}
+                  className="flex items-center justify-between py-2 px-2 -mx-2 rounded-md border-b last:border-0 hover:bg-muted transition-colors"
+                >
+                  <div>
+                    <p className="text-sm font-medium">{item.clientName}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {item.invoiceNumber} · {item.label} due {format(parseISO(item.date), "MMM d, yyyy")}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium">${item.amount.toFixed(2)}</span>
+                    {item.overdue && (
+                      <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-red-100 text-red-700">
+                        overdue
+                      </span>
+                    )}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
