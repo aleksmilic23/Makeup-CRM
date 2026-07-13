@@ -17,18 +17,30 @@ interface DueSoonInvoice {
   overdue: boolean;
 }
 
-type SentInvoiceRow = {
+interface PaymentEvent {
+  key: string;
+  id: string;
+  invoiceNumber: string;
+  clientName: string;
+  label: "Deposit" | "Paid in Full" | "Balance Paid";
+  amount: number;
+  date: string;
+}
+
+type InvoiceRow = {
   id: string;
   invoice_number: string;
+  status: "draft" | "sent" | "paid" | "void";
   total: number;
   due_date: string | null;
   event_date: string | null;
   deposit_amount: number | null;
   deposit_paid_at: string | null;
+  paid_at: string | null;
   clients: { name: string } | null;
 };
 
-function getNextDue(inv: SentInvoiceRow): { label: "Deposit" | "Balance"; amount: number; date: string } | null {
+function getNextDue(inv: InvoiceRow): { label: "Deposit" | "Balance"; amount: number; date: string } | null {
   if (inv.deposit_amount != null && !inv.deposit_paid_at) {
     return inv.due_date ? { label: "Deposit", amount: Number(inv.deposit_amount), date: inv.due_date } : null;
   }
@@ -44,15 +56,14 @@ async function getDashboardData() {
   const today = new Date();
   const startOfDay = new Date(today.setHours(0, 0, 0, 0)).toISOString();
   const endOfDay = new Date(today.setHours(23, 59, 59, 999)).toISOString();
-  const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString();
   const todayDate = format(new Date(), "yyyy-MM-dd");
+  const monthKey = format(new Date(), "yyyy-MM");
 
   const [
     { count: totalClients },
     { count: todayAppointments },
-    { data: monthAppointments },
     { data: upcomingAppointments },
-    { data: sentInvoices },
+    { data: allInvoices },
   ] = await Promise.all([
     supabase.from("clients").select("*", { count: "exact", head: true }),
     supabase
@@ -62,11 +73,6 @@ async function getDashboardData() {
       .lte("scheduled_at", endOfDay),
     supabase
       .from("appointments")
-      .select("price")
-      .gte("scheduled_at", startOfMonth)
-      .eq("status", "completed"),
-    supabase
-      .from("appointments")
       .select("*, clients(name, phone), services(name, color)")
       .eq("status", "scheduled")
       .gte("scheduled_at", new Date().toISOString())
@@ -74,15 +80,16 @@ async function getDashboardData() {
       .limit(5),
     supabase
       .from("invoices")
-      .select("id, invoice_number, total, due_date, event_date, deposit_amount, deposit_paid_at, clients(name)")
-      .eq("status", "sent"),
+      .select(
+        "id, invoice_number, status, total, due_date, event_date, deposit_amount, deposit_paid_at, paid_at, clients(name)"
+      )
+      .in("status", ["sent", "paid"]),
   ]);
 
-  const monthRevenue = monthAppointments?.reduce((sum, a) => sum + Number(a.price), 0) ?? 0;
+  const invoices = (allInvoices ?? []) as unknown as InvoiceRow[];
+  const unpaidInvoices = invoices.filter((inv) => inv.status === "sent");
 
-  const allSentInvoices = (sentInvoices ?? []) as unknown as SentInvoiceRow[];
-
-  const outstandingBalance = allSentInvoices.reduce((sum, inv) => {
+  const outstandingBalance = unpaidInvoices.reduce((sum, inv) => {
     const remaining =
       inv.deposit_amount != null && inv.deposit_paid_at
         ? Number(inv.total) - Number(inv.deposit_amount)
@@ -90,13 +97,13 @@ async function getDashboardData() {
     return sum + remaining;
   }, 0);
 
-  const overdueInvoices = allSentInvoices.filter((inv) => {
+  const overdueInvoices = unpaidInvoices.filter((inv) => {
     const nextDue = getNextDue(inv);
     return nextDue != null && nextDue.date < todayDate;
   }).length;
 
   const dueSoonCutoff = format(addDays(new Date(), 7), "yyyy-MM-dd");
-  const dueSoonInvoices: DueSoonInvoice[] = allSentInvoices
+  const dueSoonInvoices: DueSoonInvoice[] = unpaidInvoices
     .map((inv) => {
       const nextDue = getNextDue(inv);
       if (!nextDue || nextDue.date > dueSoonCutoff) return null;
@@ -114,6 +121,41 @@ async function getDashboardData() {
     .sort((a, b) => a.date.localeCompare(b.date))
     .slice(0, 8);
 
+  // Payment events: a deposit being paid and/or an invoice being marked paid, each dated by when it happened.
+  const paymentEvents: PaymentEvent[] = invoices.flatMap((inv) => {
+    const events: PaymentEvent[] = [];
+    const hasDeposit = inv.deposit_amount != null;
+    if (hasDeposit && inv.deposit_paid_at) {
+      events.push({
+        key: `${inv.id}-deposit`,
+        id: inv.id,
+        invoiceNumber: inv.invoice_number,
+        clientName: inv.clients?.name ?? "",
+        label: "Deposit",
+        amount: Number(inv.deposit_amount),
+        date: inv.deposit_paid_at,
+      });
+    }
+    if (inv.status === "paid" && inv.paid_at) {
+      events.push({
+        key: `${inv.id}-paid`,
+        id: inv.id,
+        invoiceNumber: inv.invoice_number,
+        clientName: inv.clients?.name ?? "",
+        label: hasDeposit && inv.deposit_paid_at ? "Balance Paid" : "Paid in Full",
+        amount: hasDeposit && inv.deposit_paid_at ? Number(inv.total) - Number(inv.deposit_amount) : Number(inv.total),
+        date: inv.paid_at,
+      });
+    }
+    return events;
+  });
+
+  const monthRevenue = paymentEvents
+    .filter((e) => e.date.slice(0, 7) === monthKey)
+    .reduce((sum, e) => sum + e.amount, 0);
+
+  const recentPayments = [...paymentEvents].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 8);
+
   return {
     totalClients: totalClients ?? 0,
     todayAppointments: todayAppointments ?? 0,
@@ -122,6 +164,7 @@ async function getDashboardData() {
     outstandingBalance,
     overdueInvoices: overdueInvoices ?? 0,
     dueSoonInvoices,
+    recentPayments,
   };
 }
 
@@ -141,6 +184,7 @@ export default async function DashboardPage() {
     outstandingBalance,
     overdueInvoices,
     dueSoonInvoices,
+    recentPayments,
   } = await getDashboardData();
 
   return (
@@ -178,6 +222,7 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold">${monthRevenue.toFixed(0)}</p>
+            <p className="text-xs text-muted-foreground mt-1">Deposits &amp; payments collected</p>
           </CardContent>
         </Card>
       </div>
@@ -235,6 +280,35 @@ export default async function DashboardPage() {
                       </span>
                     )}
                   </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Recent Payments</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {recentPayments.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">No payments recorded yet.</p>
+          ) : (
+            <div className="space-y-1">
+              {recentPayments.map((item) => (
+                <Link
+                  key={item.key}
+                  href={`/invoices/${item.id}`}
+                  className="flex items-center justify-between py-2 px-2 -mx-2 rounded-md border-b last:border-0 hover:bg-muted transition-colors"
+                >
+                  <div>
+                    <p className="text-sm font-medium">{item.clientName}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {item.invoiceNumber} · {item.label} · {format(new Date(item.date), "MMM d, yyyy")}
+                    </p>
+                  </div>
+                  <span className="text-sm font-medium text-green-700">+${item.amount.toFixed(2)}</span>
                 </Link>
               ))}
             </div>
