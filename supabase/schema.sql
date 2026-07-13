@@ -79,6 +79,7 @@ create table if not exists public.invoices (
   deposit_percentage numeric(5,2),
   deposit_amount numeric(10,2),
   deposit_paid_at timestamptz,
+  balance_due_offset_days integer not null default 7,
   sent_at timestamptz,
   paid_at timestamptz
 );

@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Plus, Trash2 } from "lucide-react";
 import { format } from "date-fns";
+import { BALANCE_DUE_OPTIONS, getBalanceDueDate } from "@/lib/invoice-utils";
 import type { Client, Service, InvoiceWithRelations } from "@/lib/database.types";
 
 interface LineItem {
@@ -51,6 +52,7 @@ export function InvoiceForm({
   const [taxRate, setTaxRate] = useState(invoice?.tax_rate ?? 0);
   const [requireDeposit, setRequireDeposit] = useState(invoice?.deposit_amount != null);
   const [depositPercentage, setDepositPercentage] = useState(invoice?.deposit_percentage ?? 50);
+  const [balanceDueOffset, setBalanceDueOffset] = useState(invoice?.balance_due_offset_days ?? 7);
   const [notes, setNotes] = useState(invoice?.notes ?? "");
   const [items, setItems] = useState<LineItem[]>(
     invoice
@@ -70,6 +72,7 @@ export function InvoiceForm({
   const total = subtotal + taxAmount;
   const depositAmount = requireDeposit ? total * (depositPercentage / 100) : 0;
   const balanceAmount = total - depositAmount;
+  const balanceDueDate = getBalanceDueDate(eventDate || null, balanceDueOffset);
 
   function updateItem(key: string, patch: Partial<LineItem>) {
     setItems((prev) => prev.map((item) => (item.key === key ? { ...item, ...patch } : item)));
@@ -115,6 +118,7 @@ export function InvoiceForm({
       deposit_percentage: requireDeposit ? depositPercentage : null,
       deposit_amount: requireDeposit ? Number(depositAmount.toFixed(2)) : null,
       deposit_paid_at: requireDeposit ? invoice?.deposit_paid_at ?? null : null,
+      balance_due_offset_days: requireDeposit ? balanceDueOffset : 7,
     };
 
     if (invoice) {
@@ -353,28 +357,41 @@ export function InvoiceForm({
               Require a deposit to book
             </label>
             {requireDeposit && (
-              <div className="flex items-center justify-between gap-4 pl-6">
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    min={0}
-                    max={100}
-                    step={1}
-                    value={depositPercentage}
-                    onChange={(e) => setDepositPercentage(Number(e.target.value))}
-                    className="w-20"
-                    aria-label="Deposit percentage"
-                  />
-                  <span className="text-sm text-muted-foreground">% deposit</span>
-                </div>
-                <div className="text-right text-sm">
-                  <p>
+              <div className="space-y-2 pl-6">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min={0}
+                      max={100}
+                      step={1}
+                      value={depositPercentage}
+                      onChange={(e) => setDepositPercentage(Number(e.target.value))}
+                      className="w-20"
+                      aria-label="Deposit percentage"
+                    />
+                    <span className="text-sm text-muted-foreground">% deposit</span>
+                  </div>
+                  <p className="text-sm">
                     Deposit: <span className="font-medium">${depositAmount.toFixed(2)}</span>
                     {dueDate ? ` due ${dueDate}` : ""}
                   </p>
-                  <p className="text-muted-foreground">
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <select
+                    value={balanceDueOffset}
+                    onChange={(e) => setBalanceDueOffset(Number(e.target.value))}
+                    className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    {BALANCE_DUE_OPTIONS.map((opt) => (
+                      <option key={opt.days} value={opt.days}>
+                        Balance due: {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-sm text-muted-foreground">
                     Balance: ${balanceAmount.toFixed(2)}
-                    {eventDate ? ` due by ${eventDate}` : " due by event date (not set)"}
+                    {balanceDueDate ? ` due by ${balanceDueDate}` : " due by event date (not set)"}
                   </p>
                 </div>
               </div>

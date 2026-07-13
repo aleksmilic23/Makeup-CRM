@@ -1,6 +1,7 @@
 import { Document, Page, Text, View, StyleSheet, renderToBuffer } from "@react-pdf/renderer";
 import { business } from "./business";
 import { paymentInfo, hasPaymentInfo } from "./payment-info";
+import { getBalanceDueDate } from "./invoice-utils";
 import type { InvoiceWithRelations } from "./database.types";
 
 const styles = StyleSheet.create({
@@ -150,7 +151,10 @@ function InvoiceDocument({ invoice }: { invoice: InvoiceWithRelations }) {
               <Text style={styles.depositMeta}>Remaining balance</Text>
               <Text style={styles.depositMeta}>
                 ${(Number(invoice.total) - Number(invoice.deposit_amount)).toFixed(2)}
-                {invoice.event_date ? ` due by ${invoice.event_date}` : ""}
+                {(() => {
+                  const balanceDate = getBalanceDueDate(invoice.event_date, invoice.balance_due_offset_days);
+                  return balanceDate ? ` due by ${balanceDate}` : "";
+                })()}
               </Text>
             </View>
           </View>

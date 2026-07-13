@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InvoiceActions } from "@/components/invoice-actions";
 import { paymentInfo, hasPaymentInfo } from "@/lib/payment-info";
+import { getBalanceDueDate } from "@/lib/invoice-utils";
 import { Pencil } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import type { InvoiceWithRelations } from "@/lib/database.types";
@@ -126,7 +127,10 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
             <span>Remaining balance</span>
             <span>
               ${(Number(typedInvoice.total) - Number(typedInvoice.deposit_amount)).toFixed(2)}
-              {typedInvoice.event_date ? ` due by ${format(parseISO(typedInvoice.event_date), "MMM d, yyyy")}` : ""}
+              {(() => {
+                const balanceDate = getBalanceDueDate(typedInvoice.event_date, typedInvoice.balance_due_offset_days);
+                return balanceDate ? ` due by ${format(parseISO(balanceDate), "MMM d, yyyy")}` : "";
+              })()}
             </span>
           </div>
         </div>

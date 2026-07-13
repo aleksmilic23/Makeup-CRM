@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { renderInvoicePdf } from "@/lib/invoice-pdf";
 import { business } from "@/lib/business";
 import { paymentInfo, hasPaymentInfo } from "@/lib/payment-info";
+import { getBalanceDueDate } from "@/lib/invoice-utils";
 import type { InvoiceWithRelations } from "@/lib/database.types";
 
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -45,7 +46,10 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
         typedInvoice.due_date ? ` due ${typedInvoice.due_date}` : ""
       } to confirm booking<br />
       Balance: $${(Number(typedInvoice.total) - Number(typedInvoice.deposit_amount)).toFixed(2)}${
-        typedInvoice.event_date ? ` due by ${typedInvoice.event_date}` : ""
+        (() => {
+          const balanceDate = getBalanceDueDate(typedInvoice.event_date, typedInvoice.balance_due_offset_days);
+          return balanceDate ? ` due by ${balanceDate}` : "";
+        })()
       }
       </p>
     `

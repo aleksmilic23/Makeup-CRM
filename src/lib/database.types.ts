@@ -172,6 +172,7 @@ export type Database = {
           deposit_percentage: number | null
           deposit_amount: number | null
           deposit_paid_at: string | null
+          balance_due_offset_days: number
           sent_at: string | null
           paid_at: string | null
         }
@@ -193,6 +194,7 @@ export type Database = {
           deposit_percentage?: number | null
           deposit_amount?: number | null
           deposit_paid_at?: string | null
+          balance_due_offset_days?: number
           sent_at?: string | null
           paid_at?: string | null
         }
@@ -214,6 +216,7 @@ export type Database = {
           deposit_percentage?: number | null
           deposit_amount?: number | null
           deposit_paid_at?: string | null
+          balance_due_offset_days?: number
           sent_at?: string | null
           paid_at?: string | null
         }
