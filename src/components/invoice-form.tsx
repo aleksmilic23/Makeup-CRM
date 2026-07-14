@@ -279,43 +279,45 @@ export function InvoiceForm({
             </div>
             <div className="space-y-2">
               {items.map((item) => (
-                <div key={item.key} className="flex items-center gap-2">
+                <div key={item.key} className="flex flex-col gap-2 rounded-md border p-2 sm:flex-row sm:items-center sm:border-0 sm:p-0">
                   <Input
                     placeholder="Description"
                     value={item.description}
                     onChange={(e) => updateItem(item.key, { description: e.target.value })}
                     className="flex-1"
                   />
-                  <Input
-                    type="number"
-                    min={0}
-                    step={1}
-                    value={item.quantity}
-                    onChange={(e) => updateItem(item.key, { quantity: Number(e.target.value) })}
-                    className="w-16"
-                    aria-label="Quantity"
-                  />
-                  <Input
-                    type="number"
-                    min={0}
-                    step={0.01}
-                    value={item.unit_price}
-                    onChange={(e) => updateItem(item.key, { unit_price: Number(e.target.value) })}
-                    className="w-24"
-                    aria-label="Unit price"
-                  />
-                  <span className="w-20 text-right text-sm">
-                    ${(item.quantity * item.unit_price).toFixed(2)}
-                  </span>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    onClick={() => removeItem(item.key)}
-                    disabled={items.length === 1}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={item.quantity}
+                      onChange={(e) => updateItem(item.key, { quantity: Number(e.target.value) })}
+                      className="w-16"
+                      aria-label="Quantity"
+                    />
+                    <Input
+                      type="number"
+                      min={0}
+                      step={0.01}
+                      value={item.unit_price}
+                      onChange={(e) => updateItem(item.key, { unit_price: Number(e.target.value) })}
+                      className="w-24"
+                      aria-label="Unit price"
+                    />
+                    <span className="w-20 shrink-0 text-right text-sm">
+                      ${(item.quantity * item.unit_price).toFixed(2)}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={() => removeItem(item.key)}
+                      disabled={items.length === 1}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
