@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Send, Download, CheckCircle, Ban, Wallet } from "lucide-react";
+import { Send, Download, CheckCircle, Ban, Wallet, MailCheck } from "lucide-react";
 import type { Invoice, Database } from "@/lib/database.types";
 
 type InvoiceUpdate = Database["public"]["Tables"]["invoices"]["Update"];
@@ -33,10 +33,11 @@ export function InvoiceActions({ invoice, clientEmail }: Props) {
     setSending(false);
   }
 
-  async function updateStatus(status: "paid" | "void") {
+  async function updateStatus(status: "sent" | "paid" | "void") {
     setUpdating(true);
     const patch: InvoiceUpdate = { status };
     if (status === "paid") patch.paid_at = new Date().toISOString();
+    if (status === "sent") patch.sent_at = new Date().toISOString();
     const { error } = await supabase.from("invoices").update(patch).eq("id", invoice.id);
     if (error) {
       toast.error("Failed to update invoice");
@@ -81,6 +82,19 @@ export function InvoiceActions({ invoice, clientEmail }: Props) {
           Download PDF
         </Button>
       </a>
+      {invoice.status === "draft" && (
+        <Button
+          size="sm"
+          variant="outline"
+          type="button"
+          onClick={() => updateStatus("sent")}
+          disabled={updating}
+          title="Use this if you sent the invoice yourself (e.g. downloaded and emailed it manually)"
+        >
+          <MailCheck className="h-3.5 w-3.5 mr-1.5" />
+          Mark as Sent
+        </Button>
+      )}
       {invoice.deposit_amount != null && !invoice.deposit_paid_at && invoice.status !== "paid" && (
         <Button size="sm" variant="outline" type="button" onClick={markDepositPaid} disabled={updating}>
           <Wallet className="h-3.5 w-3.5 mr-1.5" />
