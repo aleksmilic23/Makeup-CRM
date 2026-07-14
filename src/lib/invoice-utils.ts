@@ -11,3 +11,8 @@ export function getBalanceDueDate(eventDate: string | null, offsetDays: number):
   if (!offsetDays) return eventDate;
   return format(subDays(parseISO(eventDate), offsetDays), "yyyy-MM-dd");
 }
+
+// Formats a yyyy-MM-dd (or ISO timestamp) date string as "October 10th, 2026".
+export function formatLongDate(dateStr: string): string {
+  return format(parseISO(dateStr), "MMMM do, yyyy");
+}

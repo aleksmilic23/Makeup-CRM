@@ -1,7 +1,7 @@
 import { Document, Page, Text, View, StyleSheet, renderToBuffer } from "@react-pdf/renderer";
 import { business } from "./business";
 import { paymentInfo, hasPaymentInfo } from "./payment-info";
-import { getBalanceDueDate } from "./invoice-utils";
+import { getBalanceDueDate, formatLongDate } from "./invoice-utils";
 import type { InvoiceWithRelations } from "./database.types";
 
 const styles = StyleSheet.create({
@@ -81,15 +81,15 @@ function InvoiceDocument({ invoice }: { invoice: InvoiceWithRelations }) {
             {invoice.event_date ? (
               <>
                 <Text style={styles.label}>EVENT DATE</Text>
-                <Text>{invoice.event_date}</Text>
+                <Text>{formatLongDate(invoice.event_date)}</Text>
               </>
             ) : null}
             <Text style={[styles.label, invoice.event_date ? { marginTop: 8 } : {}]}>ISSUE DATE</Text>
-            <Text>{invoice.issue_date}</Text>
+            <Text>{formatLongDate(invoice.issue_date)}</Text>
             {invoice.due_date ? (
               <>
                 <Text style={[styles.label, { marginTop: 8 }]}>DUE DATE</Text>
-                <Text>{invoice.due_date}</Text>
+                <Text>{formatLongDate(invoice.due_date)}</Text>
               </>
             ) : null}
           </View>
@@ -142,9 +142,9 @@ function InvoiceDocument({ invoice }: { invoice: InvoiceWithRelations }) {
                 </Text>
               </Text>
               {invoice.deposit_paid_at ? (
-                <Text style={styles.depositPaidBadge}>PAID {invoice.deposit_paid_at.slice(0, 10)}</Text>
+                <Text style={styles.depositPaidBadge}>PAID {formatLongDate(invoice.deposit_paid_at)}</Text>
               ) : invoice.due_date ? (
-                <Text style={styles.depositMeta}>Due {invoice.due_date}</Text>
+                <Text style={styles.depositMeta}>Due {formatLongDate(invoice.due_date)}</Text>
               ) : null}
             </View>
             <View style={styles.balanceRow}>
@@ -153,7 +153,7 @@ function InvoiceDocument({ invoice }: { invoice: InvoiceWithRelations }) {
                 ${(Number(invoice.total) - Number(invoice.deposit_amount)).toFixed(2)}
                 {(() => {
                   const balanceDate = getBalanceDueDate(invoice.event_date, invoice.balance_due_offset_days);
-                  return balanceDate ? ` due by ${balanceDate}` : "";
+                  return balanceDate ? ` due by ${formatLongDate(balanceDate)}` : "";
                 })()}
               </Text>
             </View>

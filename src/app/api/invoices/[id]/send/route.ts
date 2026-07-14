@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { renderInvoicePdf } from "@/lib/invoice-pdf";
 import { business } from "@/lib/business";
 import { paymentInfo, hasPaymentInfo } from "@/lib/payment-info";
-import { getBalanceDueDate } from "@/lib/invoice-utils";
+import { getBalanceDueDate, formatLongDate } from "@/lib/invoice-utils";
 import type { InvoiceWithRelations } from "@/lib/database.types";
 
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -43,12 +43,12 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
       ? `
       <p style="margin-top: 16px;"><strong>Payment Schedule</strong><br />
       Deposit (${Number(typedInvoice.deposit_percentage)}%): $${Number(typedInvoice.deposit_amount).toFixed(2)}${
-        typedInvoice.due_date ? ` due ${typedInvoice.due_date}` : ""
+        typedInvoice.due_date ? ` due ${formatLongDate(typedInvoice.due_date)}` : ""
       } to confirm booking<br />
       Balance: $${(Number(typedInvoice.total) - Number(typedInvoice.deposit_amount)).toFixed(2)}${
         (() => {
           const balanceDate = getBalanceDueDate(typedInvoice.event_date, typedInvoice.balance_due_offset_days);
-          return balanceDate ? ` due by ${balanceDate}` : "";
+          return balanceDate ? ` due by ${formatLongDate(balanceDate)}` : "";
         })()
       }
       </p>
@@ -77,9 +77,11 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
       <p>Hi ${typedInvoice.clients.name},</p>
       <p>Please find attached invoice <strong>${typedInvoice.invoice_number}</strong> for
       <strong>$${Number(typedInvoice.total).toFixed(2)}</strong>${
-        typedInvoice.event_date ? ` for your event on ${typedInvoice.event_date}` : ""
+        typedInvoice.event_date ? ` for your event on ${formatLongDate(typedInvoice.event_date)}` : ""
       }${
-        typedInvoice.deposit_amount == null && typedInvoice.due_date ? `, due ${typedInvoice.due_date}` : ""
+        typedInvoice.deposit_amount == null && typedInvoice.due_date
+          ? `, due ${formatLongDate(typedInvoice.due_date)}`
+          : ""
       }.</p>
       ${scheduleHtml}
       ${paymentHtml}
