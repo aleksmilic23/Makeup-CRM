@@ -33,10 +33,9 @@ export function InvoiceActions({ invoice, clientEmail }: Props) {
     setSending(false);
   }
 
-  async function updateStatus(status: "sent" | "paid" | "void") {
+  async function updateStatus(status: "sent" | "void") {
     setUpdating(true);
     const patch: InvoiceUpdate = { status };
-    if (status === "paid") patch.paid_at = new Date().toISOString();
     if (status === "sent") patch.sent_at = new Date().toISOString();
     const { error } = await supabase.from("invoices").update(patch).eq("id", invoice.id);
     if (error) {
@@ -58,16 +57,26 @@ export function InvoiceActions({ invoice, clientEmail }: Props) {
     }
   }
 
-  async function markDepositPaid() {
+  async function markPaid(type: "deposit" | "full") {
     setUpdating(true);
-    const { error } = await supabase
-      .from("invoices")
-      .update({ deposit_paid_at: new Date().toISOString() })
-      .eq("id", invoice.id);
-    if (error) {
-      toast.error("Failed to update invoice");
+    const res = await fetch(`/api/invoices/${invoice.id}/mark-paid`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type }),
+    });
+    const result = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      toast.error(result.error ?? "Failed to update invoice");
     } else {
-      toast.success("Deposit marked as paid");
+      toast.success(
+        type === "deposit"
+          ? result.emailed
+            ? "Deposit marked paid — receipt emailed to you"
+            : "Deposit marked as paid"
+          : result.emailed
+            ? "Invoice marked paid — receipt emailed to you"
+            : "Invoice marked as paid"
+      );
       router.refresh();
     }
     setUpdating(false);
@@ -116,13 +125,13 @@ export function InvoiceActions({ invoice, clientEmail }: Props) {
         </Button>
       )}
       {invoice.deposit_amount != null && !invoice.deposit_paid_at && invoice.status !== "paid" && (
-        <Button size="sm" variant="outline" type="button" onClick={markDepositPaid} disabled={updating}>
+        <Button size="sm" variant="outline" type="button" onClick={() => markPaid("deposit")} disabled={updating}>
           <Wallet className="h-3.5 w-3.5 mr-1.5" />
           Mark Deposit Paid
         </Button>
       )}
       {invoice.status !== "paid" && (
-        <Button size="sm" variant="outline" type="button" onClick={() => updateStatus("paid")} disabled={updating}>
+        <Button size="sm" variant="outline" type="button" onClick={() => markPaid("full")} disabled={updating}>
           <CheckCircle className="h-3.5 w-3.5 mr-1.5" />
           Mark Paid
         </Button>
