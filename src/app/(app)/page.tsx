@@ -1,7 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, CalendarDays, TrendingUp, Receipt, AlertTriangle } from "lucide-react";
+import { Users, CalendarDays, TrendingUp, Receipt, AlertTriangle, CalendarCheck } from "lucide-react";
 import { format, addDays, parseISO } from "date-fns";
 import { getNextDue } from "@/lib/invoice-utils";
 import type { AppointmentWithRelations } from "@/lib/database.types";
@@ -35,12 +35,24 @@ type InvoiceRow = {
   total: number;
   due_date: string | null;
   event_date: string | null;
+  appointment_id: string | null;
   deposit_amount: number | null;
   deposit_paid_at: string | null;
   balance_due_offset_days: number;
   paid_at: string | null;
   clients: { name: string } | null;
 };
+
+interface UpcomingItem {
+  id: string;
+  type: "appointment" | "invoice";
+  href: string;
+  clientName: string;
+  label: string;
+  date: string;
+  amount: number;
+  statusBadge?: string;
+}
 
 async function getDashboardData() {
   const today = new Date();
@@ -67,11 +79,11 @@ async function getDashboardData() {
       .eq("status", "scheduled")
       .gte("scheduled_at", new Date().toISOString())
       .order("scheduled_at", { ascending: true })
-      .limit(5),
+      .limit(10),
     supabase
       .from("invoices")
       .select(
-        "id, invoice_number, status, total, due_date, event_date, deposit_amount, deposit_paid_at, balance_due_offset_days, paid_at, clients(name)"
+        "id, invoice_number, status, total, due_date, event_date, appointment_id, deposit_amount, deposit_paid_at, balance_due_offset_days, paid_at, clients(name)"
       )
       .in("status", ["sent", "paid"]),
   ]);
@@ -146,11 +158,40 @@ async function getDashboardData() {
 
   const recentPayments = [...paymentEvents].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 8);
 
+  // Upcoming = scheduled appointments + invoices with an event date, since a booking here often
+  // lives entirely in an invoice (no appointment row), not just in the appointments table.
+  const appointmentItems: UpcomingItem[] = ((upcomingAppointments ?? []) as AppointmentWithRelations[]).map(
+    (appt) => ({
+      id: appt.id,
+      type: "appointment",
+      href: `/appointments/${appt.id}`,
+      clientName: appt.clients?.name ?? "",
+      label: appt.services?.name ?? "",
+      date: appt.scheduled_at,
+      amount: Number(appt.price),
+      statusBadge: appt.status,
+    })
+  );
+
+  const invoiceEventItems: UpcomingItem[] = invoices
+    .filter((inv) => inv.event_date && inv.event_date >= todayDate && !inv.appointment_id)
+    .map((inv) => ({
+      id: inv.id,
+      type: "invoice",
+      href: `/invoices/${inv.id}`,
+      clientName: inv.clients?.name ?? "",
+      label: inv.invoice_number,
+      date: inv.event_date as string,
+      amount: Number(inv.total),
+    }));
+
+  const upcoming = [...appointmentItems, ...invoiceEventItems].sort((a, b) => a.date.localeCompare(b.date)).slice(0, 5);
+
   return {
     totalClients: totalClients ?? 0,
     todayAppointments: todayAppointments ?? 0,
     monthRevenue,
-    upcomingAppointments: (upcomingAppointments ?? []) as AppointmentWithRelations[],
+    upcoming,
     outstandingBalance,
     overdueInvoices: overdueInvoices ?? 0,
     dueSoonInvoices,
@@ -170,7 +211,7 @@ export default async function DashboardPage() {
     totalClients,
     todayAppointments,
     monthRevenue,
-    upcomingAppointments,
+    upcoming,
     outstandingBalance,
     overdueInvoices,
     dueSoonInvoices,
@@ -308,33 +349,48 @@ export default async function DashboardPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Upcoming Appointments</CardTitle>
+          <CardTitle className="text-base">Upcoming</CardTitle>
         </CardHeader>
         <CardContent>
-          {upcomingAppointments.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-6">No upcoming appointments.</p>
+          {upcoming.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">Nothing upcoming.</p>
           ) : (
-            <div className="space-y-3">
-              {upcomingAppointments.map((appt) => (
-                <div
-                  key={appt.id}
-                  className="flex items-center justify-between py-2 border-b last:border-0"
+            <div className="space-y-1">
+              {upcoming.map((item) => (
+                <Link
+                  key={`${item.type}-${item.id}`}
+                  href={item.href}
+                  className="flex items-center justify-between py-2 px-2 -mx-2 rounded-md border-b last:border-0 hover:bg-muted transition-colors"
                 >
                   <div>
-                    <p className="text-sm font-medium">{appt.clients?.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {appt.services?.name} · {format(new Date(appt.scheduled_at), "MMM d, h:mm a")}
-                    </p>
+                    <p className="text-sm font-medium">{item.clientName}</p>
+                    {item.type === "appointment" ? (
+                      <p className="text-xs text-muted-foreground">
+                        {item.label} · {format(new Date(item.date), "MMM d, h:mm a")}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Receipt className="h-3 w-3 shrink-0" />
+                        {item.label} · Event {format(parseISO(item.date), "MMM d, yyyy")}
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-sm font-medium">${Number(appt.price).toFixed(0)}</span>
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColors[appt.status]}`}
-                    >
-                      {appt.status}
-                    </span>
+                    <span className="text-sm font-medium">${item.amount.toFixed(0)}</span>
+                    {item.statusBadge ? (
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColors[item.statusBadge]}`}
+                      >
+                        {item.statusBadge}
+                      </span>
+                    ) : (
+                      <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-pink-100 text-pink-700 flex items-center gap-1">
+                        <CalendarCheck className="h-3 w-3" />
+                        booked
+                      </span>
+                    )}
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           )}
