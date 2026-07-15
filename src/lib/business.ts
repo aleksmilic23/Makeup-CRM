@@ -7,3 +7,5 @@ export const business = {
   phone: "",
   address: "",
 };
+
+export const APP_URL = "https://makeup-crm-three.vercel.app";

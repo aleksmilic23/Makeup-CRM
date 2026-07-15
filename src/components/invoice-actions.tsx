@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Send, Download, CheckCircle, Ban, Wallet, MailCheck } from "lucide-react";
+import { Send, Download, CheckCircle, Ban, Wallet, MailCheck, Link2 } from "lucide-react";
 import type { Invoice, Database } from "@/lib/database.types";
 
 type InvoiceUpdate = Database["public"]["Tables"]["invoices"]["Update"];
@@ -48,6 +48,16 @@ export function InvoiceActions({ invoice, clientEmail }: Props) {
     setUpdating(false);
   }
 
+  async function copyClientLink() {
+    const url = `${window.location.origin}/view/${invoice.id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Client link copied");
+    } catch {
+      toast.error("Couldn't copy link");
+    }
+  }
+
   async function markDepositPaid() {
     setUpdating(true);
     const { error } = await supabase
@@ -82,6 +92,16 @@ export function InvoiceActions({ invoice, clientEmail }: Props) {
           Download PDF
         </Button>
       </a>
+      <Button
+        size="sm"
+        variant="outline"
+        type="button"
+        onClick={copyClientLink}
+        title="Copies a read-only link safe to share with the client — no edit/payment controls"
+      >
+        <Link2 className="h-3.5 w-3.5 mr-1.5" />
+        Copy Client Link
+      </Button>
       {invoice.status === "draft" && (
         <Button
           size="sm"

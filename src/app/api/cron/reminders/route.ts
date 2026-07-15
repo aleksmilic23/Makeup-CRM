@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { format, addDays } from "date-fns";
 import { supabase } from "@/lib/supabase";
-import { business } from "@/lib/business";
+import { business, APP_URL } from "@/lib/business";
 import { getNextDue, formatLongDate, type NextDueInvoiceLike } from "@/lib/invoice-utils";
 
 type ReminderInvoiceRow = NextDueInvoiceLike & {
@@ -10,8 +10,6 @@ type ReminderInvoiceRow = NextDueInvoiceLike & {
   invoice_number: string;
   clients: { name: string } | null;
 };
-
-const APP_URL = "https://makeup-crm-three.vercel.app";
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
@@ -56,16 +54,16 @@ export async function GET(req: NextRequest) {
   const buildClientMessage = (
     item: { invoice: ReminderInvoiceRow; due: NonNullable<ReturnType<typeof getNextDue>> },
     isOverdue: boolean,
-    invoiceLink: string
+    clientViewLink: string
   ) => {
     const name = item.invoice.clients?.name ?? "there";
     const amount = `$${item.due.amount.toFixed(2)}`;
     const label = item.due.label.toLowerCase();
     const dateLong = formatLongDate(item.due.date);
     if (isOverdue) {
-      return `Hi ${name},<br/><br/>Just a friendly reminder that your ${amount} ${label} for invoice ${item.invoice.invoice_number} was due on ${dateLong} and hasn't been received yet. You can view and submit payment here: <a href="${invoiceLink}">${invoiceLink}</a>.<br/><br/>Let me know if you have any questions — thank you!`;
+      return `Hi ${name},<br/><br/>Just a friendly reminder that your ${amount} ${label} for invoice ${item.invoice.invoice_number} was due on ${dateLong} and hasn't been received yet. You can view and submit payment here: <a href="${clientViewLink}">${clientViewLink}</a>.<br/><br/>Let me know if you have any questions — thank you!`;
     }
-    return `Hi ${name},<br/><br/>Just a heads up that your ${amount} ${label} for invoice ${item.invoice.invoice_number} is due on ${dateLong}. You can view and submit payment here: <a href="${invoiceLink}">${invoiceLink}</a>.<br/><br/>Looking forward to working with you — let me know if you need anything!`;
+    return `Hi ${name},<br/><br/>Just a heads up that your ${amount} ${label} for invoice ${item.invoice.invoice_number} is due on ${dateLong}. You can view and submit payment here: <a href="${clientViewLink}">${clientViewLink}</a>.<br/><br/>Looking forward to working with you — let me know if you need anything!`;
   };
 
   const renderCard = (
@@ -75,6 +73,7 @@ export async function GET(req: NextRequest) {
     isOverdue: boolean
   ) => {
     const invoiceLink = `${APP_URL}/invoices/${item.invoice.id}`;
+    const clientViewLink = `${APP_URL}/view/${item.invoice.id}`;
     return `
     <div style="border-left: 3px solid ${accent}; background: ${bg}; border-radius: 8px; padding: 12px 14px; margin-bottom: 14px;">
       <p style="margin: 0; font-size: 14px; font-weight: 600; color: #1f2937;">
@@ -89,7 +88,7 @@ export async function GET(req: NextRequest) {
           Message to send ${item.invoice.clients?.name ?? "client"}
         </p>
         <p style="margin: 0; font-size: 13px; color: #374151; line-height: 1.5;">
-          ${buildClientMessage(item, isOverdue, invoiceLink)}
+          ${buildClientMessage(item, isOverdue, clientViewLink)}
         </p>
       </div>
       <p style="margin: 8px 0 0;">

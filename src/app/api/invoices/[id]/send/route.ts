@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { supabase } from "@/lib/supabase";
 import { renderInvoicePdf } from "@/lib/invoice-pdf";
-import { business } from "@/lib/business";
+import { business, APP_URL } from "@/lib/business";
 import { paymentInfo, hasPaymentInfo } from "@/lib/payment-info";
 import { getBalanceDueDate, formatLongDate } from "@/lib/invoice-utils";
 import type { InvoiceWithRelations } from "@/lib/database.types";
@@ -83,6 +83,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
           ? `, due ${formatLongDate(typedInvoice.due_date)}`
           : ""
       }.</p>
+      <p><a href="${APP_URL}/view/${id}" style="color: #db2777;">View invoice &amp; payment status online →</a></p>
       ${scheduleHtml}
       ${paymentHtml}
       <p>Thank you!<br />${business.name}</p>
