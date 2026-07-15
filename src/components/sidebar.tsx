@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
   Users,
+  Calendar,
   CalendarDays,
   Scissors,
   Package,
@@ -19,6 +20,7 @@ import {
 const nav = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/clients", label: "Clients", icon: Users },
+  { href: "/calendar", label: "Calendar", icon: Calendar },
   { href: "/appointments", label: "Appointments", icon: CalendarDays },
   { href: "/services", label: "Services", icon: Scissors },
   { href: "/products", label: "Products", icon: Package },
