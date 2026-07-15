@@ -34,3 +34,33 @@ export function getTotalPaid(invoice: PaidInvoiceLike): number {
       : 0;
   return depositPaid + balancePaid;
 }
+
+export interface NextDueInvoiceLike {
+  due_date: string | null;
+  event_date: string | null;
+  total: number;
+  deposit_amount: number | null;
+  deposit_paid_at: string | null;
+  balance_due_offset_days: number;
+}
+
+export interface NextDue {
+  label: "Deposit" | "Balance";
+  amount: number;
+  date: string;
+}
+
+// The next amount actually owed on an unpaid ("sent") invoice, and when it's due —
+// the deposit (if unpaid) or the balance (due relative to the event date), whichever applies.
+export function getNextDue(inv: NextDueInvoiceLike): NextDue | null {
+  if (inv.deposit_amount != null && !inv.deposit_paid_at) {
+    return inv.due_date ? { label: "Deposit", amount: Number(inv.deposit_amount), date: inv.due_date } : null;
+  }
+  if (inv.deposit_amount != null && inv.deposit_paid_at) {
+    const balanceDate = getBalanceDueDate(inv.event_date, inv.balance_due_offset_days);
+    return balanceDate
+      ? { label: "Balance", amount: Number(inv.total) - Number(inv.deposit_amount), date: balanceDate }
+      : null;
+  }
+  return inv.due_date ? { label: "Balance", amount: Number(inv.total), date: inv.due_date } : null;
+}

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, CalendarDays, TrendingUp, Receipt, AlertTriangle } from "lucide-react";
 import { format, addDays, parseISO } from "date-fns";
-import { getBalanceDueDate } from "@/lib/invoice-utils";
+import { getNextDue } from "@/lib/invoice-utils";
 import type { AppointmentWithRelations } from "@/lib/database.types";
 
 export const dynamic = "force-dynamic";
@@ -41,19 +41,6 @@ type InvoiceRow = {
   paid_at: string | null;
   clients: { name: string } | null;
 };
-
-function getNextDue(inv: InvoiceRow): { label: "Deposit" | "Balance"; amount: number; date: string } | null {
-  if (inv.deposit_amount != null && !inv.deposit_paid_at) {
-    return inv.due_date ? { label: "Deposit", amount: Number(inv.deposit_amount), date: inv.due_date } : null;
-  }
-  if (inv.deposit_amount != null && inv.deposit_paid_at) {
-    const balanceDate = getBalanceDueDate(inv.event_date, inv.balance_due_offset_days);
-    return balanceDate
-      ? { label: "Balance", amount: Number(inv.total) - Number(inv.deposit_amount), date: balanceDate }
-      : null;
-  }
-  return inv.due_date ? { label: "Balance", amount: Number(inv.total), date: inv.due_date } : null;
-}
 
 async function getDashboardData() {
   const today = new Date();
