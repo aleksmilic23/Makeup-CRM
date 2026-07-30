@@ -15,7 +15,7 @@ export function usePdfDownload(invoiceId: string, filename: string) {
       const file = new File([blob], filename, { type: "application/pdf" });
 
       if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: filename });
+        await navigator.share({ files: [file] });
       } else {
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
