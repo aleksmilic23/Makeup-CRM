@@ -22,7 +22,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   return new NextResponse(new Uint8Array(pdfBuffer), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `inline; filename="${typedInvoice.invoice_number}.pdf"`,
+      "Content-Disposition": `attachment; filename="${typedInvoice.invoice_number}.pdf"`,
     },
   });
 }
