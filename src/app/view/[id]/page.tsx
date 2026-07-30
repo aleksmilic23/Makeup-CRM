@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import { notFound } from "next/navigation";
-import { Download, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
+import { ClientPdfLink } from "@/components/client-pdf-link";
 import { format, parseISO } from "date-fns";
 import { business } from "@/lib/business";
 import { paymentInfo, hasPaymentInfo } from "@/lib/payment-info";
@@ -55,15 +56,7 @@ export default async function ClientInvoiceViewPage({ params }: { params: Promis
                 {" · "}Issued {format(parseISO(typedInvoice.issue_date), "MMM d, yyyy")}
               </p>
             </div>
-            <a
-              href={`/api/invoices/${id}/pdf`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted transition-colors shrink-0"
-            >
-              <Download className="h-3.5 w-3.5" />
-              PDF
-            </a>
+            <ClientPdfLink invoiceId={id} filename={`${typedInvoice.invoice_number}.pdf`} />
           </div>
 
           <div>

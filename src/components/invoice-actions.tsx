@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Send, Download, CheckCircle, Ban, Wallet, MailCheck, Link2 } from "lucide-react";
+import { Send, Download, CheckCircle, Ban, Wallet, MailCheck, Link2, Loader2 } from "lucide-react";
+import { usePdfDownload } from "@/components/pdf-download-button";
 import type { Invoice, Database } from "@/lib/database.types";
 
 type InvoiceUpdate = Database["public"]["Tables"]["invoices"]["Update"];
@@ -19,6 +20,7 @@ export function InvoiceActions({ invoice, clientEmail }: Props) {
   const router = useRouter();
   const [sending, setSending] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const { downloading, download } = usePdfDownload(invoice.id, `${invoice.invoice_number}.pdf`);
 
   async function handleSend() {
     setSending(true);
@@ -95,12 +97,14 @@ export function InvoiceActions({ invoice, clientEmail }: Props) {
         <Send className="h-3.5 w-3.5 mr-1.5" />
         {sending ? "Sending..." : invoice.status === "sent" || invoice.status === "paid" ? "Resend Email" : "Send Email"}
       </Button>
-      <a href={`/api/invoices/${invoice.id}/pdf`} target="_blank" rel="noopener noreferrer">
-        <Button size="sm" variant="outline" type="button">
+      <Button size="sm" variant="outline" type="button" onClick={download} disabled={downloading}>
+        {downloading ? (
+          <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+        ) : (
           <Download className="h-3.5 w-3.5 mr-1.5" />
-          Download PDF
-        </Button>
-      </a>
+        )}
+        {downloading ? "Preparing..." : "Download PDF"}
+      </Button>
       <Button
         size="sm"
         variant="outline"
