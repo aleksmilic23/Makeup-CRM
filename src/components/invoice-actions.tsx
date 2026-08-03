@@ -60,6 +60,12 @@ export function InvoiceActions({ invoice, clientEmail }: Props) {
   }
 
   async function markPaid(type: "deposit" | "full") {
+    if (type === "full" && invoice.deposit_amount != null && !invoice.deposit_paid_at) {
+      const confirmed = window.confirm(
+        "This invoice has an unpaid deposit that was never marked as received. Marking it fully paid will skip deposit tracking — continue only if the client actually paid the full amount at once."
+      );
+      if (!confirmed) return;
+    }
     setUpdating(true);
     const res = await fetch(`/api/invoices/${invoice.id}/mark-paid`, {
       method: "POST",
@@ -135,7 +141,16 @@ export function InvoiceActions({ invoice, clientEmail }: Props) {
         </Button>
       )}
       {invoice.status !== "paid" && (
-        <Button size="sm" variant="outline" type="button" onClick={() => markPaid("full")} disabled={updating}>
+        <Button
+          size="sm"
+          variant="outline"
+          type="button"
+          onClick={() => markPaid("full")}
+          disabled={updating}
+          className={
+            invoice.deposit_amount != null && !invoice.deposit_paid_at ? "ml-2 border-l-2 pl-[calc(0.75rem-2px)]" : undefined
+          }
+        >
           <CheckCircle className="h-3.5 w-3.5 mr-1.5" />
           Mark Paid
         </Button>
