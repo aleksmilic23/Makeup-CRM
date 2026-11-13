@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -30,6 +30,7 @@ export default async function CalendarPage({
 }: {
   searchParams: Promise<{ month?: string }>;
 }) {
+  const supabase = await createClient();
   const { month } = await searchParams;
   const baseDate = month ? parse(`${month}-01`, "yyyy-MM-dd", new Date()) : new Date();
   const monthStart = startOfMonth(baseDate);

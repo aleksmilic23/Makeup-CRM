@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { format } from "date-fns";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/server";
 import { business, APP_URL } from "@/lib/business";
 import { getTotalPaid, getBalanceDueDate, formatLongDate } from "@/lib/invoice-utils";
 import type { InvoiceWithRelations } from "@/lib/database.types";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const supabase = await createClient();
   const { id } = await params;
   const body = await req.json().catch(() => ({}));
   const type: "deposit" | "full" = body.type === "deposit" ? "deposit" : "full";

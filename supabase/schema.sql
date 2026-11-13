@@ -103,12 +103,12 @@ as $$
   select 'INV-' || lpad(nextval('public.invoice_number_seq')::text, 4, '0');
 $$;
 
-grant execute on function public.next_invoice_number() to anon, authenticated;
-grant usage on sequence public.invoice_number_seq to anon, authenticated;
-grant select, insert, update, delete on public.invoices to anon, authenticated;
-grant select, insert, update, delete on public.invoice_items to anon, authenticated;
+grant execute on function public.next_invoice_number() to authenticated;
+grant usage on sequence public.invoice_number_seq to authenticated;
+grant select, insert, update, delete on public.invoices to authenticated;
+grant select, insert, update, delete on public.invoice_items to authenticated;
 
--- RLS: allow anon read/write for now (single-user app)
+-- RLS: only the two app accounts (see supabase/migrations/001_auth_lockdown.sql)
 alter table public.clients enable row level security;
 alter table public.services enable row level security;
 alter table public.appointments enable row level security;
@@ -116,12 +116,27 @@ alter table public.products enable row level security;
 alter table public.invoices enable row level security;
 alter table public.invoice_items enable row level security;
 
-create policy "allow all" on public.clients for all using (true) with check (true);
-create policy "allow all" on public.services for all using (true) with check (true);
-create policy "allow all" on public.appointments for all using (true) with check (true);
-create policy "allow all" on public.products for all using (true) with check (true);
-create policy "allow all" on public.invoices for all using (true) with check (true);
-create policy "allow all" on public.invoice_items for all using (true) with check (true);
+create or replace function public.is_app_user()
+returns boolean
+language sql
+stable
+as $$
+  select coalesce(lower(auth.jwt() ->> 'email'), '') in ('aleks.renje@gmail.com', 'sairaobeauty@gmail.com');
+$$;
+
+do $$
+declare t text;
+begin
+  foreach t in array array['clients','services','appointments','products','invoices','invoice_items'] loop
+    execute format('drop policy if exists "allow all" on public.%I', t);
+    execute format('drop policy if exists "app users only" on public.%I', t);
+    execute format('create policy "app users only" on public.%I for all to authenticated using (public.is_app_user()) with check (public.is_app_user())', t);
+    execute format('revoke all on public.%I from anon', t);
+  end loop;
+end $$;
+
+revoke execute on function public.next_invoice_number() from anon;
+revoke usage on sequence public.invoice_number_seq from anon;
 
 -- Seed services
 insert into public.services (name, description, duration_minutes, price, color) values

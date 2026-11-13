@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase/browser";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Send, Download, CheckCircle, Ban, Wallet, MailCheck, Link2, Loader2 } from "lucide-react";

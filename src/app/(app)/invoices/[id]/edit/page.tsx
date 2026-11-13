@@ -1,9 +1,10 @@
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { InvoiceForm } from "@/components/invoice-form";
 import type { InvoiceWithRelations } from "@/lib/database.types";
 
 export default async function EditInvoicePage({ params }: { params: Promise<{ id: string }> }) {
+  const supabase = await createClient();
   const { id } = await params;
 
   const [{ data: invoice }, { data: clients }, { data: services }] = await Promise.all([

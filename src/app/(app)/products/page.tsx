@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import type { Product } from "@/lib/database.types";
 export const dynamic = "force-dynamic";
 
 async function getProducts(): Promise<Product[]> {
+  const supabase = await createClient();
   const { data } = await supabase.from("products").select("*").order("name");
   return data ?? [];
 }

@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { renderInvoicePdf } from "@/lib/invoice-pdf";
 import type { InvoiceWithRelations } from "@/lib/database.types";
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const supabase = createAdminClient();
   const { id } = await params;
 
   const { data: invoice, error } = await supabase

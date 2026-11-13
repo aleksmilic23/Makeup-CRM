@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/server";
 import { InvoiceForm } from "@/components/invoice-form";
 import type { AppointmentWithRelations } from "@/lib/database.types";
 
@@ -7,6 +7,7 @@ export default async function NewInvoicePage({
 }: {
   searchParams: Promise<{ client_id?: string; appointment_id?: string }>;
 }) {
+  const supabase = await createClient();
   const { client_id, appointment_id } = await searchParams;
 
   const [{ data: clients }, { data: services }, appointmentResult] = await Promise.all([

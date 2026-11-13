@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,6 +16,7 @@ const statusColors: Record<string, string> = {
 };
 
 async function getInvoices(): Promise<InvoiceWithRelations[]> {
+  const supabase = await createClient();
   const { data } = await supabase
     .from("invoices")
     .select("*, clients(*), invoice_items(*)")

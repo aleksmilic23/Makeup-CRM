@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -30,6 +30,7 @@ interface ListItem {
 }
 
 async function getListItems(): Promise<ListItem[]> {
+  const supabase = await createClient();
   const [{ data: appointments }, { data: invoiceEvents }] = await Promise.all([
     supabase
       .from("appointments")
