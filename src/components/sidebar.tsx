@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/lib/supabase/browser";
 import {
   LayoutDashboard,
   Users,
@@ -15,6 +16,7 @@ import {
   Sparkles,
   Menu,
   X,
+  LogOut,
 } from "lucide-react";
 
 const nav = [
@@ -93,6 +95,19 @@ export function Sidebar() {
             </Link>
           ))}
         </nav>
+        <div className="p-3 border-t">
+          <button
+            type="button"
+            onClick={async () => {
+              await supabase.auth.signOut();
+              window.location.assign("/login");
+            }}
+            className="flex w-full items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          >
+            <LogOut className="h-4 w-4 shrink-0" />
+            Log out
+          </button>
+        </div>
       </aside>
     </>
   );

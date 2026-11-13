@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import { Sparkles } from "lucide-react";
 import { ClientPdfLink } from "@/components/client-pdf-link";
@@ -18,6 +18,7 @@ const statusColors: Record<string, string> = {
 };
 
 export default async function ClientInvoiceViewPage({ params }: { params: Promise<{ id: string }> }) {
+  const supabase = createAdminClient();
   const { id } = await params;
 
   const { data: invoice } = await supabase

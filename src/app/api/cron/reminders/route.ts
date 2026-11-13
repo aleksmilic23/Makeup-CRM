@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { format, addDays } from "date-fns";
-import { supabase } from "@/lib/supabase";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { business, APP_URL } from "@/lib/business";
 import { getNextDue, formatLongDate, type NextDueInvoiceLike } from "@/lib/invoice-utils";
 
@@ -17,6 +17,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const supabase = createAdminClient();
   const ownerEmail = process.env.OWNER_EMAIL;
   const apiKey = process.env.RESEND_API_KEY;
   if (!ownerEmail || !apiKey) {

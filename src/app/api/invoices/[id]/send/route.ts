@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/server";
 import { renderInvoicePdf } from "@/lib/invoice-pdf";
 import { business, APP_URL } from "@/lib/business";
 import { paymentInfo, hasPaymentInfo } from "@/lib/payment-info";
@@ -8,6 +8,7 @@ import { getBalanceDueDate, formatLongDate } from "@/lib/invoice-utils";
 import type { InvoiceWithRelations } from "@/lib/database.types";
 
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const supabase = await createClient();
   const { id } = await params;
 
   const apiKey = process.env.RESEND_API_KEY;

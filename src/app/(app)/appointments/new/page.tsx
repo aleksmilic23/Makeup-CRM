@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/server";
 import { AppointmentForm } from "@/components/appointment-form";
 
 export default async function NewAppointmentPage({
@@ -6,6 +6,7 @@ export default async function NewAppointmentPage({
 }: {
   searchParams: Promise<{ client_id?: string }>;
 }) {
+  const supabase = await createClient();
   const { client_id } = await searchParams;
 
   const [{ data: clients }, { data: services }] = await Promise.all([

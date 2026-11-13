@@ -1,8 +1,9 @@
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { AppointmentForm } from "@/components/appointment-form";
 
 export default async function EditAppointmentPage({ params }: { params: Promise<{ id: string }> }) {
+  const supabase = await createClient();
   const { id } = await params;
 
   const [{ data: appt }, { data: clients }, { data: services }] = await Promise.all([
