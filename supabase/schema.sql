@@ -135,6 +135,9 @@ begin
   end loop;
 end $$;
 
+-- Logged-in users need explicit table grants; RLS above still limits them to the two app accounts.
+grant select, insert, update, delete on public.clients, public.services, public.appointments, public.products to authenticated;
+
 revoke execute on function public.next_invoice_number() from anon;
 revoke usage on sequence public.invoice_number_seq from anon;
 
