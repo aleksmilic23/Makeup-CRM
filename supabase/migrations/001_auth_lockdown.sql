@@ -25,5 +25,8 @@ end $$;
 -- Logged-in users need explicit table grants; RLS above still limits them to the two app accounts.
 grant select, insert, update, delete on public.clients, public.services, public.appointments, public.products to authenticated;
 
+-- Server-side code without a login (client invoice view, PDF, cron) uses service_role.
+grant select, insert, update, delete on public.clients, public.services, public.appointments, public.products, public.invoices, public.invoice_items to service_role;
+
 revoke execute on function public.next_invoice_number() from anon;
 revoke usage on sequence public.invoice_number_seq from anon;
